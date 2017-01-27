@@ -175,13 +175,9 @@ export abstract class AbstractComponent {
         }
 
         const wireDragEnter = () => {
-
             this._elem.addEventListener("dragenter", (event: Event) => {
                 this._onDragEnter(event);
             });
-            // this._elem.ondragenter = (event: Event) => {
-            //     this._onDragEnter(event);
-            // };
         };
 
 
