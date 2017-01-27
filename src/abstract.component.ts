@@ -2,12 +2,12 @@
 // This project is licensed under the terms of the MIT license.
 // https://github.com/akserg/ng2-dnd
 
-import {Injectable, ChangeDetectorRef} from '@angular/core';
-import {ElementRef} from '@angular/core';
+import { Injectable, ChangeDetectorRef, NgZone } from '@angular/core';
+import { ElementRef } from '@angular/core';
 
-import {DragDropConfig, DragImage} from './dnd.config';
-import {DragDropService} from './dnd.service';
-import {isString, isFunction, isPresent, createImage, callFun} from './dnd.utils';
+import { DragDropConfig, DragImage } from './dnd.config';
+import { DragDropService } from './dnd.service';
+import { isString, isFunction, isPresent, createImage, callFun } from './dnd.utils';
 
 @Injectable()
 export abstract class AbstractComponent {
@@ -23,6 +23,7 @@ export abstract class AbstractComponent {
         this._dragEnabled = !!enabled;
         this._elem.draggable = this._dragEnabled;
     }
+
     get dragEnabled(): boolean {
         return this._dragEnabled;
     }
@@ -86,24 +87,14 @@ export abstract class AbstractComponent {
     cloneItem: boolean = false;
 
     constructor(elemRef: ElementRef, public _dragDropService: DragDropService, public _config: DragDropConfig,
-        private _cdr: ChangeDetectorRef) {
+                private _cdr: ChangeDetectorRef, private zone: NgZone) {
 
         this._elem = elemRef.nativeElement;
         //
         // DROP events
         //
-        this._elem.ondragenter = (event: Event) => {
-            this._onDragEnter(event);
-        };
-        this._elem.ondragover = (event: DragEvent) => {
-            this._onDragOver(event);
-            //
-            if (event.dataTransfer != null) {
-                event.dataTransfer.dropEffect = this._config.dropEffect.name;
-            }
 
-            return false;
-        };
+
         this._elem.ondragleave = (event: Event) => {
             this._onDragLeave(event);
         };
@@ -160,6 +151,47 @@ export abstract class AbstractComponent {
             // Restore style of dragged element
             this._elem.style.cursor = this._defaultCursor;
         };
+    }
+
+    ngAfterViewInit() {
+        const wireDragOver = () => {
+            this._elem.ondragover = (event: DragEvent) => {
+                this._onDragOver(event);
+
+                if (event.dataTransfer != null) {
+                    event.dataTransfer.dropEffect = this._config.dropEffect.name;
+                }
+
+                return false;
+            };
+        };
+
+        if (this.hasDragOverSubscribers()) {
+            wireDragOver();
+        } else {
+            this.zone.runOutsideAngular(() => {
+                wireDragOver();
+            })
+        }
+
+        const wireDragEnter = () => {
+
+            this._elem.addEventListener("dragenter", (event: Event) => {
+                this._onDragEnter(event);
+            });
+            // this._elem.ondragenter = (event: Event) => {
+            //     this._onDragEnter(event);
+            // };
+        };
+
+
+        if (this.hasDragEnterSubscribers()) {
+            wireDragEnter();
+        } else {
+            this.zone.runOutsideAngular(() => {
+                wireDragEnter();
+            })
+        }
     }
 
     /******* Change detection ******/
@@ -260,12 +292,30 @@ export abstract class AbstractComponent {
     }
 
     //**** Drop Callbacks ****//
-    _onDragEnterCallback(event: Event) { }
-    _onDragOverCallback(event: Event) { }
-    _onDragLeaveCallback(event: Event) { }
-    _onDropCallback(event: Event) { }
+    _onDragEnterCallback(event: Event) {
+    }
+
+    _onDragOverCallback(event: Event) {
+    }
+
+    _onDragLeaveCallback(event: Event) {
+    }
+
+    _onDropCallback(event: Event) {
+    }
 
     //**** Drag Callbacks ****//
-    _onDragStartCallback(event: Event) { }
-    _onDragEndCallback(event: Event) { }
+    _onDragStartCallback(event: Event) {
+    }
+
+    _onDragEndCallback(event: Event) {
+    }
+
+    hasDragOverSubscribers() {
+
+    }
+
+    hasDragEnterSubscribers() {
+
+    }
 }
